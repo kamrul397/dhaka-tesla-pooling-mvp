@@ -1,18 +1,26 @@
 import express from 'express';
 import cors from 'cors';
+import passengerRoutes from './routes/passenger.routes';
+import driverRoutes from './routes/driver.routes';
+import simulationRoutes from './routes/simulation.routes';
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// Health check endpoint (Mandated for Docker & deployment in Section 6/7)
+// Health check
 app.get('/health', (_req, res) => {
     res.status(200).json({
         status: 'ok',
         service: 'Dhaka Tesla Pool API',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
     });
 });
+
+// Mount domain routes
+app.use('/api/passengers', passengerRoutes);
+app.use('/api/drivers', driverRoutes);
+app.use('/api/simulation', simulationRoutes);
 
 export default app;
