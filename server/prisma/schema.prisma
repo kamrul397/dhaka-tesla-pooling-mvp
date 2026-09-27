@@ -1,0 +1,136 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  PASSENGER
+  DRIVER
+  ADMIN
+}
+
+enum PoolStatus {
+  IDLE
+  ASSIGNED
+  DRIVER_ARRIVED
+  STARTED
+  COMPLETED
+  CANCELLED
+}
+
+enum RideRequestStatus {
+  REQUESTED
+  MATCHED
+  DRIVER_ARRIVED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  TESLA_PAY
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+}
+
+model User {
+  id                  String         @id @default(uuid())
+  name                String
+  email               String         @unique
+  role                Role           @default(PASSENGER)
+  walletBalancePoysha Int            @default(50000) // 500 BDT in Poysha (prevents float rounding errors)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  vehicles            TeslaVehicle[]
+  poolsAsDriver       RidePool[]
+  rideRequests        RideRequest[]
+  auditLogs           RideAuditLog[]
+}
+
+model TeslaVehicle {
+  id            String     @id @default(uuid())
+  name          String     // "Bullet"
+  plateNumber   String     @unique // e.g. "DHAKA-METRO-CHA-11-2026"
+  totalCapacity Int        @default(3) // 3-seater electric Tesla easybike
+  isOnline      Boolean    @default(false)
+  currentZone   String     @default("Banani")
+  driverId      String
+  driver        User       @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  pools         RidePool[]
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model RidePool {
+  id             String        @id @default(uuid())
+  driverId       String
+  driver         User          @relation(fields: [driverId], references: [id])
+  vehicleId      String
+  vehicle        TeslaVehicle  @relation(fields: [vehicleId], references: [id])
+  status         PoolStatus    @default(IDLE)
+  maxCapacity    Int           @default(3)
+  occupiedSeats  Int           @default(0)
+  routeCorridor  String        // e.g. "BANANI_CORRIDOR"
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  requests       RideRequest[]
+  auditLogs      RideAuditLog[]
+
+  @@index([status])
+}
+
+model RideRequest {
+  id                   String            @id @default(uuid())
+  passengerId          String
+  passenger            User              @relation(fields: [passengerId], references: [id])
+  poolId               String?
+  pool                 RidePool?         @relation(fields: [poolId], references: [id], onDelete: SetNull)
+  pickupZone           String            // e.g. "Banani"
+  destinationZone      String            // e.g. "Mohakhali" or "Gulshan 1"
+  requestedSeats       Int               @default(1)
+  status               RideRequestStatus @default(REQUESTED)
+  
+  // Stored in integer Poysha (1 BDT = 100 Poysha)
+  baseFarePoysha       Int               @default(2000) // 20 BDT
+  distanceChargePoysha Int               @default(0)
+  poolDiscountPoysha   Int               @default(0)
+  finalFarePoysha      Int               @default(2000)
+
+  paymentMethod        PaymentMethod     @default(TESLA_PAY)
+  paymentStatus        PaymentStatus     @default(PENDING)
+
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  auditLogs            RideAuditLog[]
+
+  @@index([status])
+  @@index([passengerId])
+}
+
+model RideAuditLog {
+  id              String       @id @default(uuid())
+  rideRequestId   String?
+  rideRequest     RideRequest? @relation(fields: [rideRequestId], references: [id], onDelete: Cascade)
+  poolId          String?
+  pool            RidePool?    @relation(fields: [poolId], references: [id], onDelete: Cascade)
+  previousStatus  String
+  newStatus       String
+  triggeredById   String
+  triggeredBy     User         @relation(fields: [triggeredById], references: [id])
+  reason          String?
+  timestamp       DateTime     @default(now())
+}

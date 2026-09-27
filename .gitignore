@@ -26,3 +26,15 @@ yarn-debug.log*
 yarn-error.log*
 .DS_Store
 Thumbs.db
+
+
+# IDE and assistant files
+.agents/
+.claude/
+.windsurf/
+skills-lock.json
+
+# Environment files
+**/.env
+**/.env.*
+!**/.env.example
