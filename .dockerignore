@@ -1,0 +1,27 @@
+# Dependencies (let Docker install its own native Linux packages)
+node_modules
+npm-debug.log
+
+# Build outputs & caches
+dist
+build
+.next
+out
+.cache
+
+# Git metadata
+.git
+.gitignore
+
+# Environment & Secrets (Never bake secrets into images)
+.env
+.env.local
+.env.*.local
+!*.env.example
+
+# IDE & OS clutter
+.DS_Store
+Thumbs.db
+.vscode
+.idea
+*.log
