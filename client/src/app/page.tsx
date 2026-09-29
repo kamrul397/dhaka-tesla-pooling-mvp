@@ -614,8 +614,8 @@ export default function DhakaTeslaApp() {
                       <span className="text-amber-400 font-black text-xs">⚡</span>
                       <span className="font-extrabold text-white text-xs">Jashim (Driver)</span>
                     </div>
-                    <span className="text-[9px] text-slate-400 bg-black/40 px-1.5 py-0.2 rounded font-mono">
-                      Banani Hub
+                    <span className="text-[9px] text-slate-300 bg-black/40 px-2 py-0.5 rounded font-mono border border-slate-700">
+                      📍 Zone: {driverDashboard?.vehicles?.[0]?.currentZone || 'Banani'}
                     </span>
                   </div>
 

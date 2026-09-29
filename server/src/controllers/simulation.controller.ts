@@ -16,6 +16,15 @@ export class SimulationController {
                 return res.status(400).json({ error: 'Seed data not found. Run npx prisma db seed first.' });
             }
 
+            // Clean active ride records so simulation is 100% idempotent & repeatable
+            await prisma.rideAuditLog.deleteMany();
+            await prisma.rideRequest.deleteMany();
+            await prisma.ridePool.deleteMany();
+            await prisma.teslaVehicle.updateMany({
+                where: { name: 'Bullet' },
+                data: { currentZone: 'Banani', isOnline: true },
+            });
+
             const timeline: string[] = [];
 
             // Step A: Nusrat books Banani -> Mohakhali

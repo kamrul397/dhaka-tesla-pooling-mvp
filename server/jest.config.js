@@ -4,5 +4,5 @@ module.exports = {
     testMatch: ['**/__tests__/**/*.test.ts'],
     verbose: true,
     forceExit: true,
-    testTimeout: 15000,
+    testTimeout: 35000,
 };

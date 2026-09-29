@@ -297,6 +297,19 @@ export class RideService {
                 include: { requests: true },
             });
 
+            // Physical Continuity: If trip completes, Bullet's location moves to the last passenger dropoff zone!
+            if (targetStatus === PoolStatus.COMPLETED) {
+                const activeRequests = pool.requests.filter(r => r.status !== RideRequestStatus.CANCELLED);
+                const finalDestination = activeRequests.length > 0 
+                    ? activeRequests[activeRequests.length - 1].destinationZone 
+                    : 'Mohakhali';
+                
+                await tx.teslaVehicle.update({
+                    where: { id: pool.vehicleId },
+                    data: { currentZone: finalDestination }
+                });
+            }
+
             return updatedPool;
         });
     }
