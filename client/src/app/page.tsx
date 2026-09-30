@@ -580,49 +580,9 @@ export default function DhakaTeslaApp() {
       )}
 
       {/* ========================================================================= */}
-      {/* MAIN CONTENT AREA                                                         */}
+      {/* MAIN CONTENT AREA (FITS ON ONE PAGE)                                      */}
       {/* ========================================================================= */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex-1 w-full flex flex-col space-y-4">
-        {/* STORY PROMINENT BANNER (VERTICAL READING MODE TOGGLE) */}
-        <div className="bg-gradient-to-r from-amber-950/40 via-slate-900 to-slate-900 border border-amber-500/30 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-lg">
-          <div className="flex items-start space-x-3.5">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0 text-xl font-black">
-              📖
-            </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="font-black text-white text-sm sm:text-base">
-                  1-Click Story Simulation (Reading Mode Available)
-                </span>
-                <span className="text-[11px] font-extrabold uppercase px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded-full border border-amber-500/30">
-                  Automated Flow
-                </span>
-              </div>
-              <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
-                Watch Jashim, Bullet, Nusrat, Rafiq & Shirin run through the entire Banani Rush-Hour narrative with step-by-step messages.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-2.5 shrink-0">
-            <button
-              onClick={() => setShowStoryReader(true)}
-              className="flex items-center space-x-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 rounded-xl font-bold text-xs sm:text-sm transition cursor-pointer"
-            >
-              <BookOpen className="w-4 h-4 text-cyan-400" />
-              <span>Open Story Reading Mode</span>
-            </button>
-            <button
-              onClick={handleRunSimulation}
-              disabled={simulating}
-              className="flex items-center space-x-1.5 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 text-slate-950 font-black rounded-xl text-xs sm:text-sm shadow transition cursor-pointer"
-            >
-              <Play className="w-4 h-4 fill-slate-950" />
-              <span>{simulating ? 'Simulating...' : 'Run Simulation'}</span>
-            </button>
-          </div>
-        </div>
-
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex-1 w-full flex flex-col space-y-3">
         {/* ROLE TABS & ACTOR SWITCHER */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
           <div className="flex space-x-2">
