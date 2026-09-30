@@ -9,7 +9,32 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Health check
+// Health check & welcome endpoints
+app.get('/', (_req, res) => {
+    res.status(200).json({
+        service: 'Dhaka Tesla Pool API',
+        status: 'online',
+        endpoints: {
+            health: '/health',
+            passengers: '/api/passengers',
+            drivers: '/api/drivers',
+            simulation: '/api/simulation/banani-rush-hour',
+        },
+    });
+});
+
+app.get('/api', (_req, res) => {
+    res.status(200).json({
+        service: 'Dhaka Tesla Pool API',
+        status: 'online',
+        endpoints: {
+            passengers: '/api/passengers',
+            drivers: '/api/drivers',
+            simulation: '/api/simulation/banani-rush-hour',
+        },
+    });
+});
+
 app.get('/health', (_req, res) => {
     res.status(200).json({
         status: 'ok',
