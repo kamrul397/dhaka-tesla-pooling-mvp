@@ -49,6 +49,29 @@ export class RideService {
             throw new Error('Requested seats must be between 1 and 3');
         }
 
+        // Prevent passenger from creating another request while waiting for driver approval or during an active ride
+        const existingActive = await prisma.rideRequest.findFirst({
+            where: {
+                passengerId,
+                status: {
+                    in: [
+                        RideRequestStatus.REQUESTED,
+                        RideRequestStatus.MATCHED,
+                        RideRequestStatus.DRIVER_ARRIVED,
+                        RideRequestStatus.IN_PROGRESS,
+                    ],
+                },
+            },
+        });
+
+        if (existingActive) {
+            if (existingActive.status === RideRequestStatus.REQUESTED) {
+                throw new Error('You already have a pending ride request waiting for driver approval.');
+            } else {
+                throw new Error('You already have an active trip in progress. Please wait until your ride completes.');
+            }
+        }
+
         const initialFare = calculateFare(pickupZone, destinationZone, false);
 
         const request = await prisma.rideRequest.create({
@@ -347,9 +370,26 @@ export class RideService {
                 }
             }
 
-            // Physical Continuity: If trip completes, Bullet's location moves to the last passenger dropoff zone!
+            // Physical Continuity & Wallet Settlement:
+            // When trip completes, deduct fare from each passenger's wallet and credit driver!
             if (targetStatus === PoolStatus.COMPLETED) {
                 const activeRequests = pool.requests.filter(r => r.status !== RideRequestStatus.CANCELLED);
+                
+                for (const req of activeRequests) {
+                    await tx.user.update({
+                        where: { id: req.passengerId },
+                        data: {
+                            walletBalancePoysha: { decrement: req.finalFarePoysha },
+                        },
+                    });
+                    await tx.user.update({
+                        where: { id: driverId },
+                        data: {
+                            walletBalancePoysha: { increment: req.finalFarePoysha },
+                        },
+                    });
+                }
+
                 const finalDestination = activeRequests.length > 0 
                     ? activeRequests[activeRequests.length - 1].destinationZone 
                     : 'Mohakhali';

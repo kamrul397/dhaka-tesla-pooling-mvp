@@ -1,9 +1,70 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/prisma';
 import { RideService } from '../services/ride.service';
-import { PoolStatus } from '@prisma/client';
+import { PoolStatus, Role } from '@prisma/client';
 
 export class SimulationController {
+    static async resetDatabase(_req: Request, res: Response) {
+        try {
+            await prisma.rideAuditLog.deleteMany();
+            await prisma.rideRequest.deleteMany();
+            await prisma.ridePool.deleteMany();
+            await prisma.teslaVehicle.deleteMany();
+            await prisma.user.deleteMany();
+
+            const jashim = await prisma.user.create({
+                data: {
+                    name: 'Jashim',
+                    email: 'jashim@tesla.dhaka',
+                    role: Role.DRIVER,
+                    walletBalancePoysha: 100000,
+                },
+            });
+
+            await prisma.teslaVehicle.create({
+                data: {
+                    name: 'Bullet',
+                    plateNumber: 'DHAKA-METRO-CHA-11-2026',
+                    totalCapacity: 3,
+                    isOnline: true,
+                    currentZone: 'Banani',
+                    driverId: jashim.id,
+                },
+            });
+
+            await prisma.user.create({
+                data: {
+                    name: 'Nusrat',
+                    email: 'nusrat@gmail.com',
+                    role: Role.PASSENGER,
+                    walletBalancePoysha: 50000,
+                },
+            });
+
+            await prisma.user.create({
+                data: {
+                    name: 'Rafiq',
+                    email: 'rafiq@gmail.com',
+                    role: Role.PASSENGER,
+                    walletBalancePoysha: 50000,
+                },
+            });
+
+            await prisma.user.create({
+                data: {
+                    name: 'Shirin',
+                    email: 'shirin@gmail.com',
+                    role: Role.PASSENGER,
+                    walletBalancePoysha: 50000,
+                },
+            });
+
+            return res.json({ success: true, message: 'Database reset successfully to initial state!' });
+        } catch (err: any) {
+            return res.status(500).json({ error: err.message });
+        }
+    }
+
     static async runBananiRushHour(_req: Request, res: Response) {
         try {
             // 1. Fetch cast
@@ -75,6 +136,10 @@ export class SimulationController {
             } catch (err: any) {
                 overbookingBlocked = true;
             }
+
+            // Step G: Bullet arrives at destination & completes trip (Fares deducted from wallets)
+            await RideService.updatePoolStatus(jashim.id, matchNusrat.poolId, PoolStatus.COMPLETED);
+            timeline.push(`8:55 AM: Bullet arrives at Mohakhali. Trip COMPLETED! Fares deducted from passenger wallets.`);
 
             return res.json({
                 success: true,

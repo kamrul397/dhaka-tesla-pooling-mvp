@@ -118,3 +118,14 @@ export async function rejectDriverRequest(driverId: string, requestId: string, r
     }
     return res.json();
 }
+
+export async function resetDatabase() {
+    const res = await fetch(`${API_BASE}/simulation/reset-database`, {
+        method: 'POST',
+    });
+    if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to reset database');
+    }
+    return res.json();
+}

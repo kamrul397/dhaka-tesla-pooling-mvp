@@ -3,6 +3,7 @@ import { SimulationController } from '../controllers/simulation.controller';
 
 const router = Router();
 
+router.post('/reset-database', SimulationController.resetDatabase);
 router.post('/banani-rush-hour', SimulationController.runBananiRushHour);
 
 export default router;
