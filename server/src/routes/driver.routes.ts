@@ -8,5 +8,6 @@ router.get('/:driverId/dashboard', DriverController.getDashboard);
 router.get('/requests/available', DriverController.getAvailableRequests);
 router.post('/pools/match', DriverController.matchRequest);
 router.post('/pools/:poolId/status', DriverController.updateStatus);
+router.post('/requests/:requestId/reject', DriverController.rejectRequest);
 
 export default router;

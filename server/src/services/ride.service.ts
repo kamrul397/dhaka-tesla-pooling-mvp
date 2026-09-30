@@ -211,6 +211,34 @@ export class RideService {
                 },
             });
 
+            // 9b. When Bullet reaches full capacity (occupiedSeats >= maxCapacity),
+            // automatically reject all remaining pending requests in the incoming queue
+            if (newOccupiedSeats >= maxCapacity) {
+                const excessPending = await tx.rideRequest.findMany({
+                    where: {
+                        status: RideRequestStatus.REQUESTED,
+                        id: { not: request.id },
+                    },
+                });
+
+                for (const pending of excessPending) {
+                    await tx.rideRequest.update({
+                        where: { id: pending.id },
+                        data: { status: RideRequestStatus.CANCELLED },
+                    });
+
+                    await tx.rideAuditLog.create({
+                        data: {
+                            rideRequestId: pending.id,
+                            previousStatus: RideRequestStatus.REQUESTED,
+                            newStatus: RideRequestStatus.CANCELLED,
+                            triggeredById: driverId,
+                            reason: 'Rejected: Bullet is full (3/3 seats occupied). Please make a new request.',
+                        },
+                    });
+                }
+            }
+
             return { poolId: pool.id, request: updatedRequest, occupiedSeats: newOccupiedSeats };
         });
     }
@@ -297,6 +325,28 @@ export class RideService {
                 include: { requests: true },
             });
 
+            // When driver starts arrival or trip, auto-reject any unassigned pending requests in queue
+            if (targetStatus === PoolStatus.DRIVER_ARRIVED || targetStatus === PoolStatus.STARTED) {
+                const unassignedRequests = await tx.rideRequest.findMany({
+                    where: { status: RideRequestStatus.REQUESTED },
+                });
+                for (const pending of unassignedRequests) {
+                    await tx.rideRequest.update({
+                        where: { id: pending.id },
+                        data: { status: RideRequestStatus.CANCELLED },
+                    });
+                    await tx.rideAuditLog.create({
+                        data: {
+                            rideRequestId: pending.id,
+                            previousStatus: RideRequestStatus.REQUESTED,
+                            newStatus: RideRequestStatus.CANCELLED,
+                            triggeredById: driverId,
+                            reason: 'Rejected: Bullet is full & en route (3/3 seats occupied). Please make a new request.',
+                        },
+                    });
+                }
+            }
+
             // Physical Continuity: If trip completes, Bullet's location moves to the last passenger dropoff zone!
             if (targetStatus === PoolStatus.COMPLETED) {
                 const activeRequests = pool.requests.filter(r => r.status !== RideRequestStatus.CANCELLED);
@@ -311,6 +361,46 @@ export class RideService {
             }
 
             return updatedPool;
+        });
+    }
+
+    /**
+     * Driver explicitly rejects an incoming ride request (e.g. Bullet full)
+     */
+    static async rejectRideRequest(
+        driverId: string,
+        requestId: string,
+        reason: string = 'Rejected: Bullet is full (3/3 seats occupied). Please make a new request.'
+    ) {
+        return await prisma.$transaction(async (tx) => {
+            const request = await tx.rideRequest.findUnique({
+                where: { id: requestId },
+            });
+
+            if (!request) {
+                throw new Error('Ride request not found');
+            }
+
+            if (request.status !== RideRequestStatus.REQUESTED) {
+                throw new InvalidStateTransitionError(`Cannot reject a request in ${request.status} status`);
+            }
+
+            const updated = await tx.rideRequest.update({
+                where: { id: requestId },
+                data: { status: RideRequestStatus.CANCELLED },
+            });
+
+            await tx.rideAuditLog.create({
+                data: {
+                    rideRequestId: requestId,
+                    previousStatus: RideRequestStatus.REQUESTED,
+                    newStatus: RideRequestStatus.CANCELLED,
+                    triggeredById: driverId,
+                    reason,
+                },
+            });
+
+            return updated;
         });
     }
 

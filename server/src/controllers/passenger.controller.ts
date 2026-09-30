@@ -93,6 +93,10 @@ export class PassengerController {
                             vehicle: { select: { name: true } },
                         },
                     },
+                    auditLogs: {
+                        orderBy: { timestamp: 'desc' },
+                        take: 1,
+                    },
                 },
             });
 

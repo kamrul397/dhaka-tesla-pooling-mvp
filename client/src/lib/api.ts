@@ -105,3 +105,16 @@ export async function runSimulation() {
     }
     return res.json();
 }
+
+export async function rejectDriverRequest(driverId: string, requestId: string, reason?: string) {
+    const res = await fetch(`${API_BASE}/drivers/requests/${requestId}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ driverId, reason }),
+    });
+    if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to reject request');
+    }
+    return res.json();
+}

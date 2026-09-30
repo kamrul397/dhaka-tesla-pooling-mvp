@@ -91,6 +91,30 @@ export class DriverController {
         }
     }
 
+    // Driver explicitly rejects an incoming request (e.g. Bullet full)
+    static async rejectRequest(req: Request, res: Response) {
+        try {
+            const requestId = req.params.requestId as string;
+            const { driverId, reason } = req.body;
+
+            if (!driverId) {
+                return res.status(400).json({ error: 'driverId is required' });
+            }
+
+            const rejected = await RideService.rejectRideRequest(
+                driverId,
+                requestId,
+                reason || 'Rejected: Bullet is full (3/3 seats occupied). Please make a new request.'
+            );
+            return res.json({ message: 'Request rejected successfully', ride: rejected });
+        } catch (err: any) {
+            if (err.name === 'InvalidStateTransitionError') {
+                return res.status(400).json({ error: err.message });
+            }
+            return res.status(500).json({ error: err.message });
+        }
+    }
+
     // List all drivers (Jashim)
     static async listDrivers(_req: Request, res: Response) {
         try {

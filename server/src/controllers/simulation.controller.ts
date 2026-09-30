@@ -52,10 +52,28 @@ export class SimulationController {
             let overbookingBlocked = false;
             try {
                 const excessReq = await RideService.createRideRequest(nusrat.id, 'Banani', 'Farmgate', 1);
-                await RideService.matchRequestToPool(jashim.id, excessReq.id);
+                try {
+                    await RideService.matchRequestToPool(jashim.id, excessReq.id);
+                } catch (err: any) {
+                    overbookingBlocked = true;
+                    // Update excess request to CANCELLED with explicit full capacity reason
+                    await prisma.rideRequest.update({
+                        where: { id: excessReq.id },
+                        data: { status: 'CANCELLED' },
+                    });
+                    await prisma.rideAuditLog.create({
+                        data: {
+                            rideRequestId: excessReq.id,
+                            previousStatus: 'REQUESTED',
+                            newStatus: 'CANCELLED',
+                            triggeredById: jashim.id,
+                            reason: 'Rejected: Bullet is full (3/3 seats occupied). Please make a new request.',
+                        },
+                    });
+                    timeline.push(`8:46 AM: Overbooking prevented! Extra passenger rejected with: "${err.message}"`);
+                }
             } catch (err: any) {
                 overbookingBlocked = true;
-                timeline.push(`8:46 AM: Overbooking prevented! Extra passenger rejected with: "${err.message}"`);
             }
 
             return res.json({
